@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LifeMovie AI - Personal Memory Studio</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Styles -->
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+  <!-- Ambient background glow elements -->
+  <div class="bg-glow glow-violet"></div>
+  <div class="bg-glow glow-rose"></div>
+
+  <!-- 1. LANDING PAGE SECTION -->
+  <div id="landing-page" class="view-section active">
+    <!-- Header/Navigation -->
+    <header class="landing-header">
+      <div class="logo">
+        <span class="logo-icon"><i data-lucide="clapperboard"></i></span>
+        <span class="logo-text">LifeMovie <span class="accent-text">AI</span></span>
+      </div>
+      <nav class="landing-nav">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#about">About</a>
+      </nav>
+      <div class="landing-auth">
+        <button class="btn-link btn-login-trigger">Login</button>
+        <button class="btn btn-primary btn-login-trigger">Get Started</button>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="hero-bg-collage">
+        <!-- Floating collage cards to match mockup background -->
+        <div class="collage-card" style="background-image: url('https://picsum.photos/300/200?random=1')"></div>
+        <div class="collage-card" style="background-image: url('https://picsum.photos/300/200?random=2')"></div>
+        <div class="collage-card" style="background-image: url('https://picsum.photos/300/200?random=3')"></div>
+        <div class="collage-card" style="background-image: url('https://picsum.photos/300/200?random=4')"></div>
+        <div class="collage-card" style="background-image: url('https://picsum.photos/300/200?random=5')"></div>
+        <div class="collage-card" style="background-image: url('https://picsum.photos/300/200?random=6')"></div>
+      </div>
+      <div class="hero-content">
+        <div class="tagline-badge"><i data-lucide="sparkles"></i> AI MEMORY STUDIO</div>
+        <h1 class="hero-title">Every Memory<br>Deserves a <span class="gradient-text">Movie.</span></h1>
+        <p class="hero-subtitle">Turn your thoughts, voice, photos, and memories into beautiful AI-generated stories—in your own language.</p>
+        <div class="hero-actions">
+          <button class="btn btn-primary btn-lg btn-login-trigger">Start Creating</button>
+          <button class="btn btn-outline btn-lg" onclick="playMovie('movies/d5602113-2025-4826-ac22-ff7ea73faac4.mp4')">
+            <i data-lucide="play"></i> Watch Demo
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="landing-section">
+      <h2 class="section-title">How It Works</h2>
+      <p class="section-subtitle">Create your life stories in four simple steps</p>
+      
+      <div class="how-it-works-grid">
+        <div class="step-card">
+          <div class="step-icon-container">
+            <i data-lucide="edit-3"></i>
+            <div class="step-number">1</div>
+          </div>
+          <h3>1. Tell Your Story</h3>
+          <p>Write, speak, or upload photos. In any language.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-icon-container">
+            <i data-lucide="brain"></i>
+            <div class="step-number">2</div>
+          </div>
+          <h3>2. AI Understands</h3>
+          <p>Our AI analyzes your memory, characters, emotions & key moments.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-icon-container">
+            <i data-lucide="wand-2"></i>
+            <div class="step-number">3</div>
+          </div>
+          <h3>3. AI Creates</h3>
+          <p>We generate scenes, voiceover, music, and bring your story to life.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-icon-container">
+            <i data-lucide="tv"></i>
+            <div class="step-number">4</div>
+          </div>
+          <h3>4. Relive Forever</h3>
+          <p>Watch, share, download and cherish your memories forever.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Featured Movies -->
+    <section id="gallery" class="landing-section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title text-left">Featured Movies</h2>
+          <p class="section-subtitle text-left">Stories created by our amazing users</p>
+        </div>
+        <a href="#" class="view-all-link btn-login-trigger">View all <i data-lucide="arrow-right"></i></a>
+      </div>
+
+      <div class="gallery-grid">
+        <div class="showcase-card" onclick="playMovie('movies/d5602113-2025-4826-ac22-ff7ea73faac4.mp4')">
+          <div class="card-media">
+            <img src="https://picsum.photos/400/250?random=11" alt="Goa Trip">
+            <span class="video-duration">2:45</span>
+            <div class="play-overlay"><i data-lucide="play"></i></div>
+          </div>
+          <div class="card-info">
+            <h3>Goa Trip 2024</h3>
+            <div class="card-meta">
+              <span class="meta-tag tag-purple">Family</span>
+              <span class="meta-time">2 days ago</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="showcase-card" onclick="playMovie('movies/e5ec0998-36d6-4128-a229-a4dd106d3c2f.mp4')">
+          <div class="card-media">
+            <img src="https://picsum.photos/400/250?random=12" alt="Birthday">
+            <span class="video-duration">3:12</span>
+            <div class="play-overlay"><i data-lucide="play"></i></div>
+          </div>
+          <div class="card-info">
+            <h3>Anaya's Birthday</h3>
+            <div class="card-meta">
+              <span class="meta-tag tag-pink">Kids</span>
+              <span class="meta-time">1 week ago</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="showcase-card">
+          <div class="card-media">
+            <img src="https://picsum.photos/400/250?random=13" alt="Wedding">
+            <span class="video-duration">4:20</span>
+            <div class="play-overlay"><i data-lucide="play"></i></div>
+          </div>
+          <div class="card-info">
+            <h3>Our Wedding</h3>
+            <div class="card-meta">
+              <span class="meta-tag tag-blue">Wedding</span>
+              <span class="meta-time">2 weeks ago</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="showcase-card">
+          <div class="card-media">
+            <img src="https://picsum.photos/400/250?random=14" alt="School">
+            <span class="video-duration">1:50</span>
+            <div class="play-overlay"><i data-lucide="play"></i></div>
+          </div>
+          <div class="card-info">
+            <h3>First School Day</h3>
+            <div class="card-meta">
+              <span class="meta-tag tag-pink">Kids</span>
+              <span class="meta-time">3 weeks ago</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="showcase-card">
+          <div class="card-media">
+            <img src="https://picsum.photos/400/250?random=15" alt="Summer">
+            <span class="video-duration">3:05</span>
+            <div class="play-overlay"><i data-lucide="play"></i></div>
+          </div>
+          <div class="card-info">
+            <h3>Summer Memories</h3>
+            <div class="card-meta">
+              <span class="meta-tag tag-green">Travel</span>
+              <span class="meta-time">1 month ago</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats Bar -->
+    <section class="stats-bar">
+      <div class="stat-item">
+        <h2>10K+</h2>
+        <p>Happy Users</p>
+      </div>
+      <div class="stat-item">
+        <h2>25K+</h2>
+        <p>Movies Created</p>
+      </div>
+      <div class="stat-item">
+        <h2>1M+</h2>
+        <p>Memories Captured</p>
+      </div>
+      <div class="stat-item">
+        <h2>50+</h2>
+        <p>Languages Supported</p>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+      <div class="footer-links">
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+        <a href="#">Contact</a>
+        <a href="#">Blog</a>
+        <a href="#">Careers</a>
+      </div>
+      <p class="footer-copyright">&copy; 2026 LifeMovie AI. Made with love for your memories.</p>
+    </footer>
+  </div>
+
+
+  <!-- 2. MAIN APP DASHBOARD -->
+  <div id="dashboard-page" class="view-section">
+    <div class="dashboard-container">
+      <!-- Sidebar Navigation -->
+      <aside class="app-sidebar">
+        <div class="logo-sidebar">
+          <span class="logo-icon"><i data-lucide="clapperboard"></i></span>
+          <span class="logo-text">LifeMovie <span class="accent-text">AI</span></span>
+        </div>
+        
+        <nav class="sidebar-nav">
+          <button class="nav-btn active" data-target="home"><i data-lucide="home"></i> Home</button>
+          <button class="nav-btn" data-target="create"><i data-lucide="edit-3"></i> Memories</button>
+          <button class="nav-btn" data-target="studio"><i data-lucide="film"></i> Movies</button>
+          <button class="nav-btn" data-target="characters"><i data-lucide="users"></i> Characters</button>
+          <button class="nav-btn" data-target="timeline"><i data-lucide="calendar"></i> Timeline</button>
+          <button class="nav-btn" data-target="travel"><i data-lucide="map"></i> Travel</button>
+          <button class="nav-btn" data-target="favorites"><i data-lucide="star"></i> Favorites</button>
+          <button class="nav-btn" data-target="family"><i data-lucide="users-2"></i> Family</button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <button class="nav-btn" data-target="settings"><i data-lucide="settings"></i> Settings</button>
+          <button class="nav-btn btn-logout"><i data-lucide="log-out"></i> Logout</button>
+          
+          <div class="user-profile-badge">
+            <img src="https://picsum.photos/80/80?random=50" alt="Siddu">
+            <div class="user-profile-info">
+              <span class="user-name">Siddu</span>
+              <span class="user-status">Premium Studio</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Panel content -->
+      <div class="main-panel">
+        <!-- Top bar -->
+        <header class="app-topbar">
+          <div class="search-box">
+            <i data-lucide="search"></i>
+            <input type="text" placeholder="Search memories, movies, people...">
+          </div>
+          <div class="topbar-actions">
+            <!-- Theme Toggle Mock -->
+            <button class="btn-icon" title="Toggle theme"><i data-lucide="sun"></i></button>
+            <button class="btn-icon" title="Notifications"><i data-lucide="bell"></i></button>
+            <button class="btn btn-primary btn-create-trigger"><i data-lucide="plus"></i> Create New</button>
+          </div>
+        </header>
+
+        <!-- Dynamic Dashboard Sub-Tabs -->
+        <div class="panel-content">
+          
+          <!-- HOME SUB-TAB -->
+          <div id="sub-home" class="dashboard-subtab active">
+            <div class="greeting-header">
+              <h1>Good Evening, Siddu 👋</h1>
+              <p>You've created 42 memories this year.</p>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+              <div class="stat-card">
+                <span class="stat-icon"><i data-lucide="edit-3"></i></span>
+                <div>
+                  <div class="stat-value">3</div>
+                  <div class="stat-label">Today's Memories</div>
+                </div>
+              </div>
+              <div class="stat-card">
+                <span class="stat-icon"><i data-lucide="film"></i></span>
+                <div>
+                  <div class="stat-value">18</div>
+                  <div class="stat-label">Movies Created</div>
+                </div>
+              </div>
+              <div class="stat-card">
+                <span class="stat-icon"><i data-lucide="users"></i></span>
+                <div>
+                  <div class="stat-value">12</div>
+                  <div class="stat-label">Characters</div>
+                </div>
+              </div>
+              <div class="stat-card">
+                <span class="stat-icon"><i data-lucide="database"></i></span>
+                <div>
+                  <div class="stat-value">8.4 GB</div>
+                  <div class="stat-label">Storage Used (of 50 GB)</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Main Row (Continue Last Movie + Quick Actions) -->
+            <div class="dashboard-row">
+              <!-- Continue last movie card -->
+              <div class="card continue-card">
+                <h3>Continue Last Movie</h3>
+                <div class="continue-content" onclick="playMovie('movies/d5602113-2025-4826-ac22-ff7ea73faac4.mp4')">
+                  <div class="continue-media">
+                    <img src="https://picsum.photos/300/180?random=20" alt="Goa Trip">
+                    <span class="play-btn"><i data-lucide="play"></i></span>
+                  </div>
+                  <div class="continue-details">
+                    <h4>Goa Trip 2024</h4>
+                    <p class="continue-time">2:45 / 4:20</p>
+                    <div class="progress-bar-container">
+                      <div class="progress-bar" style="width: 65%"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick Actions -->
+              <div class="quick-actions-grid">
+                <div class="action-card card-purple btn-create-trigger">
+                  <div class="action-icon"><i data-lucide="pencil"></i></div>
+                  <div>
+                    <h4>Quick Write</h4>
+                    <p>Write your memory</p>
+                  </div>
+                </div>
+                <div class="action-card card-pink btn-create-trigger">
+                  <div class="action-icon"><i data-lucide="mic"></i></div>
+                  <div>
+                    <h4>Quick Speak</h4>
+                    <p>Record your voice</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recent Movies Section -->
+            <div class="dashboard-section">
+              <div class="section-header">
+                <h3>Recent Movies</h3>
+                <button class="btn btn-text btn-studio-trigger">View all <i data-lucide="arrow-right"></i></button>
+              </div>
+              <div class="movies-grid" id="recent-movies-list">
+                <!-- Loaded dynamically -->
+              </div>
+            </div>
+
+            <!-- Storyboard Drafts / Continue Editing -->
+            <div class="dashboard-section">
+              <div class="section-header">
+                <h3>Storyboard Drafts</h3>
+              </div>
+              <div class="storyboard-list" id="active-storyboards">
+                <!-- Loaded dynamically -->
+              </div>
+            </div>
+          </div>
+
+          <!-- CREATE MEMORY SUB-TAB (Light Mode styled card) -->
+          <div id="sub-create" class="dashboard-subtab">
+            <div class="create-memory-wrapper">
+              <div class="create-card-light">
+                <h2>Create Memory</h2>
+                
+                <div class="create-tabs">
+                  <button class="create-tab-btn active" data-mode="write"><i data-lucide="edit-3"></i> Write</button>
+                  <button class="create-tab-btn" data-mode="speak"><i data-lucide="mic"></i> Speak</button>
+                  <button class="create-tab-btn" data-mode="upload"><i data-lucide="image"></i> Upload</button>
+                  <button class="create-tab-btn" data-mode="import"><i data-lucide="download"></i> Import</button>
+                </div>
+
+                <form id="form-create-diary">
+                  <div class="form-group-light">
+                    <input type="text" id="diary-title" class="input-light title-input" placeholder="Give your memory a title..." required>
+                  </div>
+                  
+                  <div class="form-group-light text-area-container">
+                    <textarea id="diary-content" class="input-light content-textarea" rows="8" placeholder="Tell me about your day..." required></textarea>
+                    <span class="char-counter">0/2000</span>
+                  </div>
+
+                  <!-- Quick Selectors mimicking mockup -->
+                  <div class="selectors-row">
+                    <div class="selector-item">
+                      <span class="selector-label"><i data-lucide="smile"></i> Mood</span>
+                      <select id="diary-mood" class="select-light">
+                        <option value="joyful">Happy</option>
+                        <option value="excited">Excited</option>
+                        <option value="calm">Calm</option>
+                        <option value="nostalgic">Nostalgic</option>
+                        <option value="melancholy">Melancholy</option>
+                      </select>
+                      <!-- Hidden input mapping intensity to default -->
+                      <input type="hidden" id="diary-mood-intensity" value="8">
+                    </div>
+
+                    <div class="selector-item">
+                      <span class="selector-label"><i data-lucide="map-pin"></i> Location</span>
+                      <input type="text" id="diary-location" class="input-light inline-input" placeholder="e.g. Goa, India">
+                    </div>
+
+                    <div class="selector-item">
+                      <span class="selector-label"><i data-lucide="users"></i> People</span>
+                      <input type="text" id="diary-people" class="input-light inline-input" placeholder="e.g. Family">
+                    </div>
+
+                    <div class="selector-item">
+                      <span class="selector-label"><i data-lucide="globe"></i> Language</span>
+                      <select id="diary-lang" class="select-light">
+                        <option value="en">English</option>
+                        <option value="es">Spanish</option>
+                        <option value="hi">Hindi</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Advanced settings (Hidden fields matching previous forms) -->
+                  <input type="hidden" id="diary-weather" value="Sunny">
+                  <input type="hidden" id="diary-privacy" value="standard">
+                  <input type="hidden" id="diary-draft" value="true">
+
+                  <div class="create-actions">
+                    <button type="submit" class="btn btn-primary btn-save-memory">Save Memory</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- STUDIO SUB-TAB (Movies Compile & Active Jobs) -->
+          <div id="sub-studio" class="dashboard-subtab">
+            <div class="studio-layout">
+              <!-- Compile Card -->
+              <div class="card studio-form-card">
+                <h2>Movie Stitching & Rendering</h2>
+                <p class="subtitle-text">Compile multiple saved memories and diaries into a high fidelity cinematic movie.</p>
+                
+                <form id="form-generate-movie">
+                  <div class="form-group">
+                    <label for="movie-title">Movie Title</label>
+                    <input type="text" id="movie-title" placeholder="e.g. Goa Vacation Recap" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="movie-preset">Cinematic Preset Style</label>
+                    <select id="movie-preset">
+                      <option value="cinematic">Cinematic Realism (High Fidelity)</option>
+                      <option value="pixar">Pixar 3D Animation Style</option>
+                      <option value="anime">Studio Ghibli / Anime Style</option>
+                      <option value="vintage">8mm Vintage Film Style</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="movie-summary">Director Notes / Prompt Guidance</label>
+                    <textarea id="movie-summary" rows="3" placeholder="Tell the AI what details, music, or emotions to emphasize..."></textarea>
+                  </div>
+                  <button type="submit" class="btn btn-primary w-100"><i data-lucide="sparkles"></i> Start Rendering Movie</button>
+                </form>
+              </div>
+
+              <!-- Active Jobs Card / Movie Generation progress panel -->
+              <div class="card active-jobs-card">
+                <h2>Active Rendering Jobs</h2>
+                <p class="subtitle-text">Watch the AI pipeline construct your memory timeline step-by-step.</p>
+                
+                <!-- Expanded progress display when jobs are active, else list rendering jobs -->
+                <div class="jobs-list" id="studio-jobs-list">
+                  <!-- Loaded dynamically -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CHARACTERS SUB-TAB -->
+          <div id="sub-characters" class="dashboard-subtab">
+            <div class="characters-layout">
+              <!-- Add Character Form -->
+              <div class="card char-form-card">
+                <h2>Register New Character</h2>
+                <p class="subtitle-text">Describe friends or family members so AI can generate consistent face models.</p>
+                
+                <form id="form-create-character">
+                  <div class="form-group">
+                    <label for="char-name">Character Name</label>
+                    <input type="text" id="char-name" placeholder="e.g. Mom" required>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="char-relationship">Relationship</label>
+                      <input type="text" id="char-relationship" placeholder="e.g. Mother" required>
+                    </div>
+                    <div class="form-group">
+                      <label for="char-gender">Gender</label>
+                      <select id="char-gender">
+                        <option value="female">Female</option>
+                        <option value="male">Male</option>
+                        <option value="non-binary">Non-Binary</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="char-hair-prompt">Hair / Visual Description</label>
+                    <input type="text" id="char-hair-prompt" placeholder="e.g. wavy blonde hair, green eyes">
+                  </div>
+                  <div class="form-group">
+                    <label for="char-personality">Personality Profile</label>
+                    <input type="text" id="char-personality" placeholder="e.g. Always laughing, wearing spectacles">
+                  </div>
+                  <button type="submit" class="btn btn-secondary w-100"><i data-lucide="user-plus"></i> Add Character</button>
+                </form>
+              </div>
+
+              <!-- Characters List -->
+              <div class="card char-list-card">
+                <h2>Character Showcase</h2>
+                <p class="subtitle-text">Click profiles to inspect registered consistent memory models.</p>
+                <div class="characters-grid" id="studio-characters-list">
+                  <!-- Loaded dynamically -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TIMELINE SUB-TAB (Streaming Service layout) -->
+          <div id="sub-timeline" class="dashboard-subtab">
+            <div class="timeline-streaming">
+              <h2>Your Memories Catalog</h2>
+              <p class="subtitle-text">Browse your timeline like Netflix or Disney+</p>
+              
+              <div class="timeline-streaming-container" id="timeline-list-container">
+                <!-- Loaded dynamically -->
+              </div>
+            </div>
+          </div>
+
+          <!-- OTHER PLACEHOLDERS -->
+          <div id="sub-travel" class="dashboard-subtab">
+            <div class="placeholder-tab">
+              <i data-lucide="map"></i>
+              <h2>Travel Memory Map</h2>
+              <p>Explore your stories sorted by geographically tagged locations. Coming soon!</p>
+            </div>
+          </div>
+          <div id="sub-favorites" class="dashboard-subtab">
+            <div class="placeholder-tab">
+              <i data-lucide="star"></i>
+              <h2>Starred Memories</h2>
+              <p>Your most emotional and favorite memory compilations saved in one place.</p>
+            </div>
+          </div>
+          <div id="sub-family" class="dashboard-subtab">
+            <div class="placeholder-tab">
+              <i data-lucide="users-2"></i>
+              <h2>Shared Family Circle</h2>
+              <p>Connect diaries and compile movies together with family members.</p>
+            </div>
+          </div>
+          <div id="sub-settings" class="dashboard-subtab">
+            <div class="placeholder-tab">
+              <i data-lucide="settings"></i>
+              <h2>Memory Settings</h2>
+              <p>Configure model API keys, storage backups, and account options.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Bottom Navigation Bar (Visible on mobile screens) -->
+    <nav class="app-mobile-nav">
+      <button class="mobile-nav-btn active" data-target="home"><i data-lucide="home"></i></button>
+      <button class="mobile-nav-btn" data-target="create"><i data-lucide="edit-3"></i></button>
+      <button class="mobile-nav-btn btn-plus-center btn-create-trigger"><i data-lucide="plus"></i></button>
+      <button class="mobile-nav-btn" data-target="studio"><i data-lucide="film"></i></button>
+      <button class="mobile-nav-btn" data-target="timeline"><i data-lucide="calendar"></i></button>
+    </nav>
+  </div>
+
+  <!-- Video Player Modal -->
+  <div id="video-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <button class="modal-close" id="btn-close-modal">&times;</button>
+      <div class="modal-video-layout">
+        <div class="video-container">
+          <video id="player" controls width="100%" height="auto"></video>
+        </div>
+        <div class="video-metadata-panel">
+          <h3 id="modal-video-title">Goa Trip 2024</h3>
+          <p class="summary-label">Summary / Notes</p>
+          <p id="modal-video-summary" class="summary-text">A beautiful family journey through the beaches of Goa. Captured with cinematic realism, narration, and background ambient sounds.</p>
+          
+          <div class="metadata-footer">
+            <button class="btn btn-secondary w-100 btn-download-mock"><i data-lucide="download"></i> Download Movie</button>
+            <button class="btn btn-outline w-100 btn-share-mock"><i data-lucide="share-2"></i> Share Memory</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Main JavaScript App Logic -->
+  <script src="index.js"></script>
+</body>
+</html>
