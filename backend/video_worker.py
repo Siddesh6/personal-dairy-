@@ -71,7 +71,7 @@ def create_fallback_image(path, text):
         draw.text((512, y_text), line, fill='#F3F4F6', align='center', anchor='mm')
         y_text += 35
         
-    draw.text((512, 850), "L I F E M O V I E  A I", fill='#9CA3AF', align='center', anchor='mm')
+    draw.text((512, 850), "S O U L B O O K", fill='#9CA3AF', align='center', anchor='mm')
     img.save(path)
 
 # Send Progress via WebSocket Broadcast API
@@ -359,7 +359,7 @@ def process_movie(db, movie):
 
 def main():
     print("====================================================")
-    print("      LIFEMOVIE AI VIDEO GENERATOR WORKER")
+    print("      SOULBOOK VIDEO GENERATOR WORKER")
     print("      Listening for rendering tasks... (Ctrl+C to exit)")
     print("====================================================")
     

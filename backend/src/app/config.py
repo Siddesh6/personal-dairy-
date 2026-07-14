@@ -2,7 +2,7 @@ import os
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "LifeMovie AI Backend"
+    PROJECT_NAME: str = "SoulBook Backend"
     API_V1_STR: str = "/api/v1"
     
     # Database
