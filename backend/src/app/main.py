@@ -1,8 +1,10 @@
+import os
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from .config import settings
 from .routes import diaries, characters, movies
-from typing import Dict, List
+from .websocket_manager import manager
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -12,11 +14,21 @@ app = FastAPI(
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify actual Flutter web URL
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount uploads static folder to serve uploaded photos/videos
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
+# Mount movies static folder in backend if needed (worker outputs files to frontend/movies, but we can mount it here as well)
+MOVIES_DIR = r"d:\dairy\frontend_web\movies"
+os.makedirs(MOVIES_DIR, exist_ok=True)
+app.mount("/movies", StaticFiles(directory=MOVIES_DIR), name="movies")
 
 # Register Routers
 app.include_router(diaries.router, prefix=settings.API_V1_STR)
@@ -31,16 +43,12 @@ def read_root():
         "version": "1.0.0"
     }
 
-# WebSocket Manager for real-time AI render notifications
-from .websocket_manager import manager
-
 @websocket_route := app.websocket("/ws/v1/jobs/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
     await manager.connect(client_id, websocket)
     try:
         while True:
             data = await websocket.receive_text()
-            # Handle messages from clients if necessary
             await manager.send_personal_message(f"Ping received. Client: {client_id}", websocket)
     except WebSocketDisconnect:
         manager.disconnect(client_id, websocket)

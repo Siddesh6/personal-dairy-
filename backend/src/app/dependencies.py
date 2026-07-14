@@ -1,9 +1,13 @@
 import jwt
 import urllib.request
 import json
+import uuid
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy.orm import Session
 from .config import settings
+from .database import get_db
+from .models.user import User
 
 security = HTTPBearer(auto_error=False)
 
@@ -77,3 +81,37 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
         # Fallback to default user if Auth0 keys not matching (e.g. invalid config)
         print("No matching RSA key found in Auth0 JWKS. Falling back to default dev user ID.")
         return {"sub": "319c5c11-9a74-4b53-a5c9-59eb4df8f4a1"}
+
+def get_current_user_db(db: Session = Depends(get_db), token: dict = Depends(verify_token)) -> User:
+    sub = token.get("sub")
+    if not sub:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User identity not found in token"
+        )
+    
+    # 1. Check if sub matches firebase_uid (which holds Auth0 sub ID)
+    user = db.query(User).filter(User.firebase_uid == sub).first()
+    if user:
+        return user
+        
+    # 2. Check if sub is a valid UUID and matches User.id
+    try:
+        val_uuid = uuid.UUID(sub)
+        user = db.query(User).filter(User.id == val_uuid).first()
+        if user:
+            return user
+    except ValueError:
+        pass
+        
+    # 3. If not found in DB, auto-create a user row for this authenticated token
+    new_user = User(
+        email=token.get("email", "user@example.com"),
+        display_name=token.get("name", token.get("email", "Anonymous User")),
+        profile_pic_url=token.get("picture"),
+        firebase_uid=sub
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user

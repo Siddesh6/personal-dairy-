@@ -5,6 +5,7 @@ import uuid
 import urllib.parse
 import requests
 import subprocess
+import json
 from gtts import gTTS
 from PIL import Image, ImageDraw
 
@@ -13,20 +14,35 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
 from app.database import SessionLocal
 from app.models import Movie, MovieScene, Diary
+from app.config import settings
 
-# Output folder for finished movies (accessible statically from frontend port 8080)
-OUTPUT_DIR = r"d:\dairy\frontend_web\movies"
-TEMP_DIR = r"d:\dairy\backend\temp_render"
+# Detect if running in Linux (Docker) or Windows
+IS_LINUX = sys.platform.startswith('linux') or os.path.exists('/.dockerenv')
+
+if IS_LINUX:
+    OUTPUT_DIR = "/app/movies"
+    TEMP_DIR = "/app/temp_render"
+else:
+    OUTPUT_DIR = r"d:\dairy\frontend_web\movies"
+    TEMP_DIR = r"d:\dairy\backend\temp_render"
 
 os.makedirs(TEMP_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # Helper to translate Windows absolute paths to WSL paths
 def win_to_wsl_path(win_path):
+    if IS_LINUX:
+        return win_path.replace('\\', '/')
     cleaned = win_path.replace('\\', '/')
     drive = cleaned[0].lower()
     path_part = cleaned[2:]
     return f"/mnt/{drive}{path_part}"
+
+# Helper to prefix ffmpeg commands
+def get_ffmpeg_prefix():
+    if IS_LINUX:
+        return ["ffmpeg"]
+    return ["wsl", "ffmpeg"]
 
 # Programmatic fallback image generator
 def create_fallback_image(path, text):
@@ -34,12 +50,10 @@ def create_fallback_image(path, text):
     img = Image.new('RGB', (1024, 1024), color='#0B0B0F')
     draw = ImageDraw.Draw(img)
     
-    # Draw geometric patterns for a high-tech/creative look
     draw.ellipse((100, 100, 924, 924), fill='#0E0E14', outline='#8B5CF6', width=6)
     draw.ellipse((200, 200, 824, 824), fill='#141420', outline='#F472B6', width=4)
     draw.ellipse((350, 350, 674, 674), fill='#1C1C30', outline='#14B8A6', width=2)
     
-    # Wrap text
     words = text.split()
     lines = []
     current_line = []
@@ -54,22 +68,97 @@ def create_fallback_image(path, text):
         
     y_text = 450 - (len(lines) * 15)
     for line in lines:
-        # Draw text at center anchor 'mm'
         draw.text((512, y_text), line, fill='#F3F4F6', align='center', anchor='mm')
         y_text += 35
         
-    # Overlay app tag
     draw.text((512, 850), "L I F E M O V I E  A I", fill='#9CA3AF', align='center', anchor='mm')
-    
     img.save(path)
 
+# Send Progress via WebSocket Broadcast API
 def send_progress(movie_id, user_id, message):
     try:
-        url = f"http://127.0.0.1:8000/api/v1/movies/{movie_id}/progress"
+        # If in Docker, use container network URL, otherwise localhost
+        host = "backend:8000" if IS_LINUX else "127.0.0.1:8000"
+        url = f"http://{host}/api/v1/movies/{movie_id}/progress"
         r = requests.post(url, json={"user_id": str(user_id), "message": message}, timeout=5)
         print(f"  [Progress Event] sent: '{message}' (Status: {r.status_code})")
     except Exception as e:
         print(f"  [Progress Event Error] Failed to send '{message}': {e}")
+
+# Gemini API Integration for cinematic script splitting
+def get_story_from_gemini(narrative_text):
+    if not settings.GEMINI_API_KEY:
+        print("  [Gemini API] Key not set. Falling back to local split.")
+        return None
+    
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={settings.GEMINI_API_KEY}"
+    prompt = f"""
+    You are a professional film screenwriter. 
+    Take the following personal memories and split them into 3 distinct scenes for a movie. 
+    For each scene, return a visual image prompt (description of what we see, styled visually) and a matching voiceover narration script.
+    Return the output as a valid JSON array of exactly 3 elements, formatted like this:
+    [
+      {{"scene": 1, "image_prompt": "cinematic sunset photo of...", "narration": "We started our trip..."}},
+      {{"scene": 2, "image_prompt": "cinematic photo of...", "narration": "Then we went to..."}},
+      {{"scene": 3, "image_prompt": "cinematic photo of...", "narration": "Finally, we closed the night..."}}
+    ]
+    Do not include markdown tags like ```json in the output. Just return raw JSON.
+    
+    Memory context: {narrative_text}
+    """
+    
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "contents": [
+            {
+                "parts": [
+                    {"text": prompt}
+                ]
+            }
+        ]
+    }
+    
+    try:
+        r = requests.post(url, json=payload, headers=headers, timeout=15)
+        if r.status_code == 200:
+            result = r.json()
+            text = result['candidates'][0]['content']['parts'][0]['text'].strip()
+            if text.startswith("```"):
+                text = text.replace("```json", "").replace("```", "").strip()
+            return json.loads(text)
+    except Exception as e:
+        print(f"  [Gemini Error] Fallback to sentence split: {e}")
+    return None
+
+# ElevenLabs Vocal Synthesis Integration
+def generate_elevenlabs_tts(script, path):
+    if not settings.ELEVENLABS_API_KEY:
+        return False
+    
+    voice_id = "21m00Tcm4TlvDq8ikWAM" # Rachel
+    url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
+    headers = {
+        "xi-api-key": settings.ELEVENLABS_API_KEY,
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "text": script,
+        "model_id": "eleven_monolingual_v1",
+        "voice_settings": {
+            "stability": 0.5,
+            "similarity_boost": 0.75
+        }
+    }
+    
+    try:
+        r = requests.post(url, json=payload, headers=headers, timeout=20)
+        if r.status_code == 200:
+            with open(path, 'wb') as f:
+                f.write(r.content)
+            return True
+    except Exception as e:
+        print(f"  [ElevenLabs Error] Fallback to gTTS: {e}")
+    return False
 
 def process_movie(db, movie):
     print(f"\n[Worker] Starting render for movie: {movie.title} (ID: {movie.id})")
@@ -91,23 +180,40 @@ def process_movie(db, movie):
         else:
             narrative_texts.append(f"A story about a happy memory titled {movie.title}.")
     
-    # 2. Divide narrative into 3 scenes
     full_narrative = " ".join(narrative_texts)
-    sentences = [s.strip() for s in full_narrative.split('.') if s.strip()]
-    if not sentences:
-        sentences = [f"This is the story of {movie.title}."]
-        
-    chunk_size = max(1, len(sentences) // 3)
+    
+    # 2. Divide narrative into 3 scenes (using Gemini or fallback)
+    scene_data = get_story_from_gemini(full_narrative)
+    
     scene_scripts = []
-    for i in range(3):
-        start = i * chunk_size
-        end = None if i == 2 else (i + 1) * chunk_size
-        segment = ". ".join(sentences[start:end]) + "."
-        if not segment.strip() or segment == ".":
-            segment = f"And that concludes our memories of {movie.title}."
-        scene_scripts.append(segment)
-        
-    print(f"[Worker] Split narrative into 3 scene scripts:\n - Scene 1: {scene_scripts[0]}\n - Scene 2: {scene_scripts[1]}\n - Scene 3: {scene_scripts[2]}")
+    scene_prompts = []
+    
+    if scene_data and len(scene_data) == 3:
+        print("[Worker] Successfully retrieved script breakdown from Gemini API.")
+        for item in scene_data:
+            scene_scripts.append(item.get("narration", ""))
+            scene_prompts.append(item.get("image_prompt", ""))
+    else:
+        # Fallback to local sentence splitting
+        sentences = [s.strip() for s in full_narrative.split('.') if s.strip()]
+        if not sentences:
+            sentences = [f"This is the story of {movie.title}."]
+            
+        chunk_size = max(1, len(sentences) // 3)
+        for i in range(3):
+            start = i * chunk_size
+            end = None if i == 2 else (i + 1) * chunk_size
+            segment = ". ".join(sentences[start:end]) + "."
+            if not segment.strip() or segment == ".":
+                segment = f"And that concludes our memories of {movie.title}."
+            scene_scripts.append(segment)
+            
+            # Form simple prompts
+            words = segment.replace('.', '').replace(',', '').split()
+            core = " ".join(words[:12]) if len(words) > 12 else " ".join(words)
+            scene_prompts.append(core)
+            
+        print("[Worker] Local sentence splitting fallback applied.")
 
     scene_files = []
     style_suffix = f" in a beautiful {movie.style_preset} cartoon 2d animation style"
@@ -117,19 +223,15 @@ def process_movie(db, movie):
         send_progress(movie.id, movie.user_id, f"Processing scene {idx+1} of 3...")
         print(f"[Worker] Processing Scene {idx+1}/3...")
         
-        # A. Get visual prompt
-        words = script.replace('.', '').replace(',', '').split()
-        core_prompt = " ".join(words[:12]) if len(words) > 12 else " ".join(words)
-        visual_prompt = f"{core_prompt}{style_suffix}"
+        visual_prompt = f"{scene_prompts[idx]}{style_suffix}"
         
-        # B. Download scene image from Pollinations AI (with retries and backoff)
+        # Download scene image from Pollinations AI
         encoded_prompt = urllib.parse.quote(visual_prompt)
         image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&seed={idx+42}"
         
         temp_img_path = os.path.join(TEMP_DIR, f"scene_{movie.id}_{idx}.jpg")
         download_success = False
         
-        # Retries loop (3 attempts)
         for attempt in range(1, 4):
             print(f"  Downloading image (Attempt {attempt}/3) from: {image_url}")
             try:
@@ -149,26 +251,30 @@ def process_movie(db, movie):
                 print(f"    Exception occurred: {e}. Retrying...")
                 time.sleep(2)
                 
-        # If download failed, create programmatic fallback
         if not download_success:
-            create_fallback_image(temp_img_path, core_prompt)
+            create_fallback_image(temp_img_path, scene_prompts[idx])
             
-        # C. Generate scene narration voice (gTTS)
+        # Generate scene narration voice (ElevenLabs or fallback gTTS)
         temp_audio_path = os.path.join(TEMP_DIR, f"scene_{movie.id}_{idx}.mp3")
-        print(f"  Generating TTS narration: '{script[:40]}...'")
-        tts = gTTS(text=script, lang='en')
-        tts.save(temp_audio_path)
+        print(f"  Generating vocal narration: '{script[:40]}...'")
         
-        # D. Stitch Image + Audio into temporary video clip using FFmpeg in WSL
+        tts_success = generate_elevenlabs_tts(script, temp_audio_path)
+        if not tts_success:
+            print("  Falling back to local gTTS synthesis.")
+            tts = gTTS(text=script, lang='en')
+            tts.save(temp_audio_path)
+        
+        # Stitch Image + Audio into temporary video clip using FFmpeg
         temp_clip_path = os.path.join(TEMP_DIR, f"scene_{movie.id}_{idx}.mp4")
         wsl_img = win_to_wsl_path(temp_img_path)
         wsl_aud = win_to_wsl_path(temp_audio_path)
         wsl_clip = win_to_wsl_path(temp_clip_path)
         
         send_progress(movie.id, movie.user_id, f"Encoding video clip for scene {idx+1}/3...")
-        print(f"  Encoding scene video clip via WSL FFmpeg...")
-        cmd = [
-            "wsl", "ffmpeg", "-y",
+        print(f"  Encoding scene video clip via FFmpeg...")
+        
+        cmd = get_ffmpeg_prefix() + [
+            "-y",
             "-loop", "1", "-i", wsl_img,
             "-i", wsl_aud,
             "-c:v", "libx264", "-tune", "stillimage",
@@ -179,8 +285,8 @@ def process_movie(db, movie):
         res = subprocess.run(cmd, capture_output=True, text=True)
         if res.returncode != 0:
             print(f"  FFmpeg Error (Scene {idx+1}): {res.stderr}. Retrying fallback encoding...")
-            cmd_fallback = [
-                "wsl", "ffmpeg", "-y",
+            cmd_fallback = get_ffmpeg_prefix() + [
+                "-y",
                 "-loop", "1", "-i", wsl_img,
                 "-i", wsl_aud,
                 "-c:v", "libx264", "-c:a", "aac",
@@ -191,7 +297,6 @@ def process_movie(db, movie):
             
         scene_files.append(temp_clip_path)
         
-        # Create MovieScene record in database
         scene_record = MovieScene(
             movie_id=movie.id,
             scene_order=idx + 1,
@@ -215,8 +320,8 @@ def process_movie(db, movie):
     wsl_list = win_to_wsl_path(concat_list_path)
     wsl_out = win_to_wsl_path(final_output_path)
     
-    cmd_concat = [
-        "wsl", "ffmpeg", "-y",
+    cmd_concat = get_ffmpeg_prefix() + [
+        "-y",
         "-f", "concat", "-safe", "0",
         "-i", wsl_list,
         "-c", "copy",
@@ -252,7 +357,6 @@ def process_movie(db, movie):
     except:
         pass
 
-
 def main():
     print("====================================================")
     print("      LIFEMOVIE AI VIDEO GENERATOR WORKER")
@@ -262,10 +366,8 @@ def main():
     while True:
         db = SessionLocal()
         try:
-            # Query for movies in "rendering" status
             rendering_movies = db.query(Movie).filter(Movie.status == "rendering").all()
             for movie in rendering_movies:
-                # To prevent double processing, only run if it has no scenes generated yet
                 if len(movie.scenes) == 0:
                     process_movie(db, movie)
         except Exception as e:

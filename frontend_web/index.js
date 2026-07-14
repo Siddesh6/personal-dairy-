@@ -291,8 +291,9 @@ createTabBtns.forEach(btn => {
         contentTextarea.placeholder = "Recording voice... Click Save when you are finished talking to transcribe.";
         contentTextarea.value = "We had a family picnic at the beach in Goa today. The kids built sandcastles, we ate fresh mangoes, and Dad played guitar while the sun went down.";
       } else if (mode === 'upload') {
-        contentTextarea.placeholder = "Upload photos to extract memory captions...";
-        contentTextarea.value = "Selected 4 photos: beach_sunset.jpg, family_picnic.jpg, kids_playing.jpg. AI caption: A happy sunset picnic with family at a sandy beach in Goa.";
+        // Trigger file select
+        const fileInput = document.getElementById('diary-media-file');
+        if (fileInput) fileInput.click();
       } else if (mode === 'import') {
         contentTextarea.placeholder = "Import logs from Instagram, WhatsApp, or Apple Photos...";
         contentTextarea.value = "Imported WhatsApp chat logs from July 14, 2026: 'What a perfect day in Goa! Family picnic on the beach was amazing. Best sunset ever!'";
@@ -302,6 +303,50 @@ createTabBtns.forEach(btn => {
       }
     }
   });
+});
+
+// Setup File Upload Event Listener
+document.addEventListener('DOMContentLoaded', () => {
+  const mediaFileInput = document.getElementById('diary-media-file');
+  if (mediaFileInput) {
+    mediaFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const contentTextarea = document.getElementById('diary-content');
+      if (contentTextarea) {
+        contentTextarea.placeholder = "Uploading your media file...";
+        contentTextarea.value = `[Uploading: ${file.name}...]`;
+      }
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      try {
+        const authHeaders = await getAuthHeaders(false); // get auth headers without JSON Content-Type
+        
+        const response = await fetch(`${API_BASE_URL}/diaries/upload`, {
+          method: 'POST',
+          headers: authHeaders,
+          body: formData
+        });
+        
+        if (!response.ok) throw new Error('Upload failed');
+        const data = await response.json();
+        
+        showToast(`Media "${file.name}" uploaded successfully!`, 'success');
+        if (contentTextarea) {
+          contentTextarea.value = `I captured this beautiful memory. \n\n[Uploaded Media: ${data.url}]`;
+        }
+      } catch (err) {
+        showToast(`Media upload failed: ${err.message}`, 'error');
+        if (contentTextarea) {
+          contentTextarea.value = '';
+          contentTextarea.placeholder = "Tell me about your day...";
+        }
+      }
+    });
+  }
 });
 
 // Form Handlers
