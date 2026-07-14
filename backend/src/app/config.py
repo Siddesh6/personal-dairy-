@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     ELEVENLABS_API_KEY: str = os.getenv("ELEVENLABS_API_KEY", "")
     SUNO_API_KEY: str = os.getenv("SUNO_API_KEY", "")
     
+    # Auth0 Authentication Config
+    AUTH0_DOMAIN: str = os.getenv("AUTH0_DOMAIN", "dev-lifemovie.us.auth0.com")
+    AUTH0_AUDIENCE: str = os.getenv("AUTH0_AUDIENCE", "http://127.0.0.1:8000/api")
+    
     class Config:
         case_sensitive = True
 

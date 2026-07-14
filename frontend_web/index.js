@@ -1,8 +1,17 @@
-/* LifeMovie AI Web Frontend - App Logic Redesign */
+/* LifeMovie AI Web Frontend - App Logic with Auth0 Integration */
 
 const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
 const WS_BASE_URL = 'ws://127.0.0.1:8000/ws/v1';
 const DEFAULT_USER_ID = '319c5c11-9a74-4b53-a5c9-59eb4df8f4a1';
+
+// Auth0 Configuration
+// Set to your real Auth0 values. If left as 'your-client-id-here', local mock developer auth is active.
+const AUTH0_DOMAIN = 'dev-lifemovie.us.auth0.com';
+const AUTH0_CLIENT_ID = 'your-client-id-here';
+const AUTH0_AUDIENCE = 'http://127.0.0.1:8000/api';
+
+let auth0Client = null;
+let useMockAuth = true;
 
 // App State
 const state = {
@@ -13,18 +22,19 @@ const state = {
   movies: [],
   jobs: [],
   ws: null,
-  progress: {} // Stores WebSocket progress messages by movie title
+  progress: {}, // Stores WebSocket progress messages by movie title
+  user: null
 };
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
-  initLoginHandler();
-  initNavigation();
-  initForms();
-  initModal();
-  
-  // Set mock counter
-  updateMockStats();
+  initAuth().then(() => {
+    initLoginHandler();
+    initNavigation();
+    initForms();
+    initModal();
+    updateMockStats();
+  });
 });
 
 // Mock counter for dashboard header
@@ -32,44 +42,162 @@ function updateMockStats() {
   // Can be hardcoded or dynamically computed
 }
 
-// Login Toggle Handler
+// Auth0 SDK Initialization
+async function initAuth() {
+  if (AUTH0_CLIENT_ID === 'your-client-id-here') {
+    useMockAuth = true;
+    console.log("Auth0 running in Local Mock Mode. Add real AUTH0_CLIENT_ID in index.js to configure Auth0.");
+    
+    // Check if mock callback redirect happened
+    if (window.location.search.includes('code=') && window.location.search.includes('state=')) {
+      state.isLoggedIn = true;
+      history.replaceState({}, document.title, window.location.pathname);
+      const mockUser = {
+        name: "Siddu",
+        email: "siddu@example.com",
+        picture: "https://picsum.photos/100/100?random=99"
+      };
+      state.user = mockUser;
+      updateUserProfileUI(mockUser);
+      onUserAuthenticated();
+      showToast("Logged in with mock developer profile", "success");
+    }
+    return;
+  }
+  
+  try {
+    auth0Client = await createAuth0Client({
+      domain: AUTH0_DOMAIN,
+      clientId: AUTH0_CLIENT_ID,
+      authorizationParams: {
+        redirect_uri: window.location.origin + window.location.pathname,
+        audience: AUTH0_AUDIENCE
+      }
+    });
+    
+    useMockAuth = false;
+    
+    // Process Auth0 callback if redirected
+    const query = window.location.search;
+    if (query.includes("code=") && query.includes("state=")) {
+      await auth0Client.handleRedirectCallback();
+      history.replaceState({}, document.title, window.location.pathname);
+    }
+    
+    const authenticated = await auth0Client.isAuthenticated();
+    if (authenticated) {
+      state.isLoggedIn = true;
+      const user = await auth0Client.getUser();
+      state.user = user;
+      updateUserProfileUI(user);
+      onUserAuthenticated();
+    }
+  } catch (err) {
+    console.warn("Auth0 initialization failed. Running in fallback Local Mock Mode.", err);
+    useMockAuth = true;
+  }
+}
+
+// Generate Auth Headers for Fetch Requests
+async function getAuthHeaders(isPost = false) {
+  const headers = {};
+  if (isPost) {
+    headers['Content-Type'] = 'application/json';
+  }
+  
+  if (!useMockAuth && auth0Client) {
+    try {
+      const token = await auth0Client.getTokenSilently();
+      headers['Authorization'] = `Bearer ${token}`;
+    } catch (err) {
+      console.warn("Could not retrieve Auth0 token silently:", err);
+    }
+  } else {
+    // Inject mock token for developer preview
+    headers['Authorization'] = 'Bearer mock-developer-token';
+  }
+  return headers;
+}
+
+// Update User Profile Display in UI
+function updateUserProfileUI(user) {
+  const nameEl = document.querySelector('.user-name');
+  const picEl = document.querySelector('.user-profile-badge img');
+  const greetEl = document.querySelector('.greeting-header h1');
+  
+  if (nameEl) nameEl.textContent = user.name || user.email;
+  if (picEl && user.picture) picEl.src = user.picture;
+  if (greetEl) {
+    const displayName = user.given_name || user.name || 'Siddu';
+    greetEl.textContent = `Good Evening, ${displayName} 👋`;
+  }
+}
+
+// Handler when user successfully logs in
+function onUserAuthenticated() {
+  const landingSec = document.getElementById('landing-page');
+  const dashSec = document.getElementById('dashboard-page');
+  
+  landingSec.classList.remove('active');
+  dashSec.classList.add('active');
+  
+  // Load data and start websocket listener
+  loadAllData();
+  connectWebSocket();
+  window.scrollTo(0, 0);
+}
+
+// Login triggers handler
 function initLoginHandler() {
   const loginTriggers = document.querySelectorAll('.btn-login-trigger');
   const logoutTrigger = document.querySelector('.btn-logout');
   
-  const landingSec = document.getElementById('landing-page');
-  const dashSec = document.getElementById('dashboard-page');
-  
   loginTriggers.forEach(btn => {
-    btn.addEventListener('click', () => {
-      state.isLoggedIn = true;
-      landingSec.classList.remove('active');
-      dashSec.classList.add('active');
-      
-      // Load actual user data upon logging in
-      loadAllData();
-      
-      // Establish WebSocket
-      connectWebSocket();
-      
-      // Scroll to top
-      window.scrollTo(0, 0);
+    btn.addEventListener('click', async () => {
+      if (useMockAuth) {
+        state.isLoggedIn = true;
+        const mockUser = {
+          name: "Siddu",
+          email: "siddu@example.com",
+          picture: "https://picsum.photos/100/100?random=99"
+        };
+        state.user = mockUser;
+        updateUserProfileUI(mockUser);
+        onUserAuthenticated();
+        showToast("Logged in successfully (Mock Auth)", "success");
+      } else {
+        try {
+          await auth0Client.loginWithRedirect();
+        } catch (err) {
+          showToast("Auth0 redirect failed. Verify client credentials.", "error");
+        }
+      }
     });
   });
   
   if (logoutTrigger) {
-    logoutTrigger.addEventListener('click', () => {
+    logoutTrigger.addEventListener('click', async () => {
       state.isLoggedIn = false;
+      const landingSec = document.getElementById('landing-page');
+      const dashSec = document.getElementById('dashboard-page');
       dashSec.classList.remove('active');
       landingSec.classList.add('active');
       
-      // Clean up WebSocket
       if (state.ws) {
         state.ws.close();
       }
       
-      // Scroll to top
       window.scrollTo(0, 0);
+      
+      if (!useMockAuth && auth0Client) {
+        auth0Client.logout({
+          logoutParams: {
+            returnTo: window.location.origin + window.location.pathname
+          }
+        });
+      } else {
+        showToast("Logged out successfully", "success");
+      }
     });
   }
 }
@@ -216,7 +344,7 @@ function initForms() {
       try {
         const response = await fetch(`${API_BASE_URL}/diaries/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: await getAuthHeaders(true),
           body: JSON.stringify(payload)
         });
         
@@ -262,7 +390,7 @@ function initForms() {
       try {
         const response = await fetch(`${API_BASE_URL}/characters/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: await getAuthHeaders(true),
           body: JSON.stringify(payload)
         });
         
@@ -295,10 +423,9 @@ function initForms() {
       };
       
       try {
-        // 1. Create Movie Job
         const response = await fetch(`${API_BASE_URL}/movies/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: await getAuthHeaders(true),
           body: JSON.stringify(payload)
         });
         
@@ -308,7 +435,6 @@ function initForms() {
         showToast(`Movie job "${title}" created. Initializing rendering...`, 'success');
         formMovie.reset();
         
-        // 2. Trigger Render (Simulates Celery triggering in backend)
         await triggerMovieRender(movie.id);
         loadMovies();
       } catch (err) {
@@ -322,7 +448,8 @@ function initForms() {
 async function triggerMovieRender(movieId) {
   try {
     const response = await fetch(`${API_BASE_URL}/movies/${movieId}/trigger-render`, {
-      method: 'POST'
+      method: 'POST',
+      headers: await getAuthHeaders(true)
     });
     if (!response.ok) throw new Error('Failed to trigger rendering engine');
     const updatedMovie = await response.json();
@@ -339,14 +466,14 @@ async function loadAllData() {
     loadCharacters(),
     loadMovies()
   ]);
-  
-  // Render home page dashboard sections based on fetched data
   renderHomeDashboard();
 }
 
 async function loadDiaries() {
   try {
-    const response = await fetch(`${API_BASE_URL}/diaries/`);
+    const response = await fetch(`${API_BASE_URL}/diaries/`, {
+      headers: await getAuthHeaders(false)
+    });
     if (!response.ok) throw new Error('Could not fetch diaries');
     state.diaries = await response.json();
     renderTimeline();
@@ -362,7 +489,9 @@ async function loadDiaries() {
 
 async function loadCharacters() {
   try {
-    const response = await fetch(`${API_BASE_URL}/characters/`);
+    const response = await fetch(`${API_BASE_URL}/characters/`, {
+      headers: await getAuthHeaders(false)
+    });
     if (!response.ok) throw new Error('Could not fetch characters');
     state.characters = await response.json();
     renderCharactersList();
@@ -378,7 +507,9 @@ async function loadCharacters() {
 
 async function loadMovies() {
   try {
-    const response = await fetch(`${API_BASE_URL}/movies/`);
+    const response = await fetch(`${API_BASE_URL}/movies/`, {
+      headers: await getAuthHeaders(false)
+    });
     if (!response.ok) throw new Error('Could not fetch movies');
     state.movies = await response.json();
     renderJobsList();
@@ -615,7 +746,6 @@ function renderJobsList() {
       `;
     }
     
-    // Normal Completed or Failed job
     const statusClass = job.status === 'completed' ? 'status-completed' : 'status-rendering';
     const statusIcon = job.status === 'completed' ? 'check-circle' : 'alert-circle';
     
@@ -639,7 +769,6 @@ function renderJobsList() {
 }
 
 function renderHomeDashboard() {
-  // Render continue last drafts list dynamically based on latest drafts
   const drafts = state.diaries.filter(d => d.is_draft || d.id === '1' || d.id === '2');
   const activeStoryboards = document.getElementById('active-storyboards');
   
@@ -663,7 +792,6 @@ function renderHomeDashboard() {
     }).join('');
   }
   
-  // Render completed movies list in Netflix card format
   const completed = state.movies.filter(m => m.status === 'completed');
   const moviesGrid = document.getElementById('recent-movies-list');
   
@@ -700,15 +828,10 @@ function connectWebSocket() {
         const data = JSON.parse(event.data);
         if (data.type === 'render_progress') {
           showToast(`Job "${data.title}": ${data.message}`, 'success');
-          
-          // Save last progress message
           state.progress[data.title] = data.message;
-          
-          // Reload movies & active progress lists
           loadMovies();
         }
       } catch (e) {
-        // Plain text message
         if (event.data.includes('Ping')) {
           console.log('WS Ping response received.');
         } else {
@@ -762,14 +885,13 @@ function showToast(message, type = 'info') {
   container.appendChild(toast);
   lucide.createIcons();
   
-  // Slide out and remove toast
   setTimeout(() => {
     toast.style.animation = 'slideIn 0.3s reverse forwards';
     setTimeout(() => toast.remove(), 300);
   }, 4000);
 }
 
-// Play movie modal controller (Supports real database movies and landing mock pre-views)
+// Play movie modal controller
 window.playMovie = function(movieIdOrUrl) {
   let title = "Goa Trip 2024";
   let summary = "A beautiful family journey through the beaches of Goa. Captured with cinematic realism, narration, and background ambient sounds.";
@@ -782,7 +904,6 @@ window.playMovie = function(movieIdOrUrl) {
     title = "Anaya's Birthday";
     url = "movies/e5ec0998-36d6-4128-a229-a4dd106d3c2f.mp4";
   } else {
-    // Search in state.movies
     const movie = state.movies.find(m => m.id === movieIdOrUrl || m.rendered_video_url === movieIdOrUrl);
     if (movie) {
       title = movie.title;
@@ -818,7 +939,6 @@ function initModal() {
       modal.style.display = 'none';
     });
     
-    // Close modal if background is clicked
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
         closeBtn.click();

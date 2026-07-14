@@ -7,6 +7,7 @@ from ..models.movie import Movie, MovieScene
 from ..websocket_manager import manager
 from pydantic import BaseModel
 from datetime import datetime
+from ..dependencies import verify_token
 
 router = APIRouter(prefix="/movies", tags=["movies"])
 
@@ -34,13 +35,15 @@ class MovieResponse(MovieBase):
         from_attributes = True
 
 @router.get("/", response_model=List[MovieResponse])
-def read_movies(db: Session = Depends(get_db)):
+def read_movies(db: Session = Depends(get_db), current_user: dict = Depends(verify_token)):
+    user_id = current_user.get("sub")
     return db.query(Movie).all()
 
 @router.post("/", response_model=MovieResponse, status_code=status.HTTP_201_CREATED)
-def create_movie(movie_in: MovieCreate, db: Session = Depends(get_db)):
+def create_movie(movie_in: MovieCreate, db: Session = Depends(get_db), current_user: dict = Depends(verify_token)):
+    user_id = current_user.get("sub") or movie_in.user_id
     db_movie = Movie(
-        user_id=movie_in.user_id,
+        user_id=user_id,
         title=movie_in.title,
         style_preset=movie_in.style_preset,
         summary=movie_in.summary,
@@ -52,14 +55,14 @@ def create_movie(movie_in: MovieCreate, db: Session = Depends(get_db)):
     return db_movie
 
 @router.get("/{movie_id}", response_model=MovieResponse)
-def read_movie(movie_id: UUID, db: Session = Depends(get_db)):
+def read_movie(movie_id: UUID, db: Session = Depends(get_db), current_user: dict = Depends(verify_token)):
     db_movie = db.query(Movie).filter(Movie.id == movie_id).first()
     if not db_movie:
         raise HTTPException(status_code=404, detail="Movie job not found")
     return db_movie
 
 @router.post("/{movie_id}/trigger-render", response_model=MovieResponse)
-def trigger_render(movie_id: UUID, db: Session = Depends(get_db)):
+def trigger_render(movie_id: UUID, db: Session = Depends(get_db), current_user: dict = Depends(verify_token)):
     db_movie = db.query(Movie).filter(Movie.id == movie_id).first()
     if not db_movie:
         raise HTTPException(status_code=404, detail="Movie job not found")

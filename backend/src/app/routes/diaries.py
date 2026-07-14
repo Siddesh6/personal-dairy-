@@ -6,6 +6,7 @@ from ..database import get_db
 from ..models.diary import Diary, DiaryMedia
 from pydantic import BaseModel
 from datetime import datetime
+from ..dependencies import verify_token
 
 router = APIRouter(prefix="/diaries", tags=["diaries"])
 
@@ -34,13 +35,17 @@ class DiaryResponse(DiaryBase):
         from_attributes = True
 
 @router.get("/", response_model=List[DiaryResponse])
-def read_diaries(db: Session = Depends(get_db)):
+def read_diaries(db: Session = Depends(get_db), current_user: dict = Depends(verify_token)):
+    # Authenticate and query diaries
+    user_id = current_user.get("sub")
     return db.query(Diary).all()
 
 @router.post("/", response_model=DiaryResponse, status_code=status.HTTP_201_CREATED)
-def create_diary(diary_in: DiaryCreate, db: Session = Depends(get_db)):
+def create_diary(diary_in: DiaryCreate, db: Session = Depends(get_db), current_user: dict = Depends(verify_token)):
+    # Override user_id from token if present, otherwise fallback to request input
+    user_id = current_user.get("sub") or diary_in.user_id
     db_diary = Diary(
-        user_id=diary_in.user_id,
+        user_id=user_id,
         title=diary_in.title,
         content_raw=diary_in.content_raw,
         location_name=diary_in.location_name,
@@ -57,14 +62,14 @@ def create_diary(diary_in: DiaryCreate, db: Session = Depends(get_db)):
     return db_diary
 
 @router.get("/{diary_id}", response_model=DiaryResponse)
-def read_diary(diary_id: UUID, db: Session = Depends(get_db)):
+def read_diary(diary_id: UUID, db: Session = Depends(get_db), current_user: dict = Depends(verify_token)):
     db_diary = db.query(Diary).filter(Diary.id == diary_id).first()
     if not db_diary:
         raise HTTPException(status_code=404, detail="Diary entry not found")
     return db_diary
 
 @router.delete("/{diary_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_diary(diary_id: UUID, db: Session = Depends(get_db)):
+def delete_diary(diary_id: UUID, db: Session = Depends(get_db), current_user: dict = Depends(verify_token)):
     db_diary = db.query(Diary).filter(Diary.id == diary_id).first()
     if not db_diary:
         raise HTTPException(status_code=404, detail="Diary entry not found")
