@@ -30,7 +30,7 @@ services:
   # 2. Frontend Static Site
   - type: web
     name: lifemovie-frontend
-    env: static
+    runtime: static
     publishPath: frontend_web
     buildCommand: "" # No build step, it's pre-built HTML/JS/CSS
 
