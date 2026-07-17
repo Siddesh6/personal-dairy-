@@ -15,7 +15,7 @@ services:
         sync: false # Set this to your Supabase service_role key
       - key: REDIS_URL
         fromService:
-          type: redis
+          type: keyvalue
           name: lifemovie-redis
           property: connectionString
       - key: GEMINI_API_KEY
@@ -34,7 +34,8 @@ services:
     publishPath: frontend_web
     buildCommand: "" # No build step, it's pre-built HTML/JS/CSS
 
-redis:
-  - name: lifemovie-redis
+  # 3. Redis Broker (Valkey / Key Value)
+  - type: keyvalue
+    name: lifemovie-redis
     plan: free
-
+    ipAllowList: [] # Restrict access to internal network only for security
