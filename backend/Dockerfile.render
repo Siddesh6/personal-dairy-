@@ -20,8 +20,9 @@ COPY video_worker.py .
 # Set Python path to find our app
 ENV PYTHONPATH=/app/src
 
-# Create a startup script that runs both the background worker and FastAPI
-RUN echo '#!/bin/sh\npython video_worker.py &\nexec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}' > /app/start.sh
+# Copy the startup script and make it executable (with CRLF safety)
+COPY start.sh /app/start.sh
+RUN sed -i 's/\r$//' /app/start.sh
 RUN chmod +x /app/start.sh
 
 EXPOSE 8000
