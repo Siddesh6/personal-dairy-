@@ -31,7 +31,7 @@ services:
   - type: web
     name: lifemovie-frontend
     runtime: static
-    publishPath: frontend_web
+    staticPublishPath: frontend_web
     buildCommand: "" # No build step, it's pre-built HTML/JS/CSS
 
   # 3. Redis Broker (Valkey / Key Value)
