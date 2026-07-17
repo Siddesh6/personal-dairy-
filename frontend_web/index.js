@@ -1,8 +1,17 @@
 /* SoulBook Web Frontend - App Logic with Auth0 Integration */
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
-const WS_BASE_URL = 'ws://127.0.0.1:8000/ws/v1';
+// Dynamically adapt backend URL depending on environment
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const API_BASE_URL = isLocal 
+  ? 'http://127.0.0.1:8000/api/v1' 
+  : `https://${window.location.hostname.replace('-frontend', '-backend')}/api/v1`;
+
+const WS_BASE_URL = isLocal 
+  ? 'ws://127.0.0.1:8000/ws/v1' 
+  : `wss://${window.location.hostname.replace('-frontend', '-backend')}/ws/v1`;
+
 const DEFAULT_USER_ID = '319c5c11-9a74-4b53-a5c9-59eb4df8f4a1';
+
 
 // Auth0 Configuration
 // Set to your real Auth0 values. If left as 'your-client-id-here', local mock developer auth is active.
@@ -954,8 +963,15 @@ window.playMovie = function(movieIdOrUrl) {
       title = movie.title;
       summary = movie.summary || "A beautiful memory movie compiled from your life timeline.";
       url = movie.rendered_video_url;
+      // Resolve relative backend URLs to absolute ones
+      if (url && url.startsWith('/') && !url.startsWith('//')) {
+        const base = API_BASE_URL.replace('/api/v1', '');
+        url = `${base}${url}`;
+      }
     }
   }
+
+
   
   const modal = document.getElementById('video-modal');
   const player = document.getElementById('player');

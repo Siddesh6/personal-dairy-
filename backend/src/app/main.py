@@ -26,9 +26,16 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # Mount movies static folder in backend if needed (worker outputs files to frontend/movies, but we can mount it here as well)
-MOVIES_DIR = r"d:\dairy\frontend_web\movies"
+import sys
+IS_LINUX = sys.platform.startswith('linux') or os.path.exists('/.dockerenv')
+if IS_LINUX:
+    MOVIES_DIR = "/app/movies"
+else:
+    MOVIES_DIR = r"d:\dairy\frontend_web\movies"
+
 os.makedirs(MOVIES_DIR, exist_ok=True)
 app.mount("/movies", StaticFiles(directory=MOVIES_DIR), name="movies")
+
 
 # Register Routers
 app.include_router(diaries.router, prefix=settings.API_V1_STR)

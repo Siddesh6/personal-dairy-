@@ -332,9 +332,20 @@ def process_movie(db, movie):
     if res_concat.returncode == 0:
         print(f"[Worker] Success! Movie written to: {final_output_path}")
         movie.status = "completed"
-        movie.rendered_video_url = f"/movies/{movie.id}.mp4"
+        
+        # Upload generated movie to Supabase if configured, fallback to local path
+        from app.supabase_storage import upload_file_to_supabase
+        supabase_url = upload_file_to_supabase("movies", final_output_path, f"{movie.id}.mp4")
+        if supabase_url:
+            movie.rendered_video_url = supabase_url
+            print(f"[Worker] Uploaded successfully to Supabase: {supabase_url}")
+        else:
+            movie.rendered_video_url = f"/movies/{movie.id}.mp4"
+            print(f"[Worker] Saved to local path: {movie.rendered_video_url}")
+            
         movie.duration_seconds = sum(max(3, len(s.split()) // 2) for s in scene_scripts)
         send_progress(movie.id, movie.user_id, "Movie rendering completed successfully!")
+
     else:
         print(f"[Worker] Concatenation failed: {res_concat.stderr}")
         movie.status = "failed"

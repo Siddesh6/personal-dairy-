@@ -1,0 +1,29 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Install system dependencies including FFmpeg for video rendering
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy and install python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir pyjwt cryptography uvicorn
+
+# Copy application source and worker script
+COPY src/ /app/src/
+COPY video_worker.py .
+
+# Set Python path to find our app
+ENV PYTHONPATH=/app/src
+
+# Create a startup script that runs both the background worker and FastAPI
+RUN echo '#!/bin/sh\npython video_worker.py &\nexec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}' > /app/start.sh
+RUN chmod +x /app/start.sh
+
+EXPOSE 8000
+
+CMD ["/app/start.sh"]

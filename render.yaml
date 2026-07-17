@@ -1,0 +1,40 @@
+services:
+  # 1. Backend Web Service (runs both FastAPI and video worker)
+  - type: web
+    name: lifemovie-backend
+    env: docker
+    dockerfilePath: Dockerfile.render
+    dockerContext: backend
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        sync: false # Set this to your Supabase PostgreSQL connection string
+      - key: SUPABASE_URL
+        sync: false # Set this to your Supabase project API URL (https://xxx.supabase.co)
+      - key: SUPABASE_KEY
+        sync: false # Set this to your Supabase service_role key
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: lifemovie-redis
+          property: connectionString
+      - key: GEMINI_API_KEY
+        sync: false # Provide your Gemini API key in Render Dashboard
+      - key: ELEVENLABS_API_KEY
+        sync: false # Provide your ElevenLabs API key in Render Dashboard
+      - key: AUTH0_DOMAIN
+        value: dev-lifemovie.us.auth0.com
+      - key: AUTH0_AUDIENCE
+        value: http://127.0.0.1:8000/api
+
+  # 2. Frontend Static Site
+  - type: web
+    name: lifemovie-frontend
+    env: static
+    publishPath: frontend_web
+    buildCommand: "" # No build step, it's pre-built HTML/JS/CSS
+
+redis:
+  - name: lifemovie-redis
+    plan: free
+
